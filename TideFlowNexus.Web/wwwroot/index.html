@@ -1,0 +1,162 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>TideFlow Nexus</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    body{font-family:Arial;margin:0;background:#f3f7fb}
+    header{display:flex;justify-content:space-between;align-items:center;padding:10px 16px;background:#0a3d62;color:#fff}
+    nav a{color:#fff;margin-right:12px;text-decoration:none}
+    .wrap{padding:16px}
+    .hide{display:none}
+    .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px}
+    .card{background:#fff;border-radius:8px;padding:12px;box-shadow:0 2px 6px rgba(0,0,0,.08)}
+    input,button,select{padding:10px;border-radius:6px;border:1px solid #ccc;margin:4px 0;width:100%}
+    button{background:#0a3d62;color:#fff;border:none}
+    .row{display:flex;gap:8px;flex-wrap:wrap}
+    .tag{display:inline-block;padding:4px 8px;border-radius:12px;background:#e8f0fe}
+  </style>
+</head>
+<body>
+  <header>
+    <div>TideFlow Nexus</div>
+    <nav>
+      <a href="#home">Home</a>
+      <a href="#board">Board</a>
+      <a href="#trad">Trad</a>
+      <a href="#ecosystem">Ecosystem</a>
+      <a href="#settings">Setting</a>
+      <a id="authLink" href="#login">Login</a>
+    </nav>
+  </header>
+  <div class="wrap">
+    <section id="home" class="view">
+      <h2>Real-Time Ocean Energy for a Sustainable Future</h2>
+      <div class="row">
+        <a href="#board"><button>Try Dashboard</button></a>
+        <a href="#register"><button>Join Partnership</button></a>
+      </div>
+    </section>
+
+    <section id="login" class="view hide">
+      <h3>Login</h3>
+      <input id="loginUser" placeholder="User">
+      <input id="loginPass" placeholder="Password" type="password">
+      <button id="btnLogin">Log</button>
+      <a href="#register">Not registered yet? Click here to register</a>
+    </section>
+
+    <section id="register" class="view hide">
+      <h3>Register</h3>
+      <input id="regUser" placeholder="User">
+      <input id="regPass" placeholder="Password" type="password">
+      <input id="regPass2" placeholder="Password again" type="password">
+      <button id="btnRegister">Register</button>
+    </section>
+
+    <section id="board" class="view hide">
+      <h3>Equipment</h3>
+      <div id="equipList" class="grid"></div>
+      <h3>Health</h3>
+      <div id="healthAvg" class="tag"></div>
+      <div id="predList" class="grid"></div>
+    </section>
+
+    <section id="device" class="view hide">
+      <h3 id="deviceTitle"></h3>
+      <div id="deviceInfo" class="card"></div>
+      <a href="#home"><button id="deviceBack">Go back</button></a>
+    </section>
+
+    <section id="trad" class="view hide">
+      <h3>Exchange</h3>
+      <div class="card">
+        <h4>Buy</h4>
+        <input id="buyAmount" placeholder="electric capacity (kWh)">
+        <input id="buyPrice" placeholder="price/kWh">
+        <button id="btnBuy">Execute Buy</button>
+      </div>
+      <div class="card">
+        <h4>Sell</h4>
+        <input id="sellAmount" placeholder="electric capacity (kWh)">
+        <input id="sellPrice" placeholder="price/kWh">
+        <button id="btnSell">Execute Sell</button>
+      </div>
+      <a href="#history"><button>Historical records</button></a>
+      <a href="#token"><button>Special token calculation</button></a>
+      <a href="#market"><button>Carbon Credit Marketplace</button></a>
+    </section>
+
+    <section id="history" class="view hide">
+      <h3>Historical records</h3>
+      <div id="txList" class="grid"></div>
+      <a href="#home"><button>Go back</button></a>
+    </section>
+
+    <section id="token" class="view hide">
+      <h3>Special token calculation</h3>
+      <input id="energyKwh" placeholder="energy (kWh)">
+      <input id="baselineKg" placeholder="baseline kg/kWh" value="0.7">
+      <button id="btnToken">Calculate</button>
+      <div id="tokenResult" class="card"></div>
+    </section>
+
+    <section id="market" class="view hide">
+      <h3>Carbon Credit Marketplace</h3>
+      <div id="marketList" class="grid"></div>
+      <a href="#home"><button>Go back</button></a>
+    </section>
+
+    <section id="ecosystem" class="view hide">
+      <h3>Ecosystem</h3>
+      <div id="ecoMetrics" class="card"></div>
+      <h4>Citizen Report Form</h4>
+      <input id="obsDesc" placeholder="Description">
+      <input id="obsPhoto" placeholder="Photo URL">
+      <button id="btnObs">Submit</button>
+      <div id="obsList" class="grid"></div>
+    </section>
+
+    <section id="settings" class="view hide">
+      <h3>User Setting</h3>
+      <div id="meView" class="card"></div>
+      <input id="meEmail" placeholder="Email">
+      <input id="meRole" placeholder="Role">
+      <button id="btnSaveMe">Save Changes</button>
+    </section>
+  </div>
+
+  <script>
+    const api = location.origin
+    let token = ''
+    function navigate(id){ location.hash = '#'+id }
+    function show(id){ document.querySelectorAll('.view').forEach(el=>el.classList.add('hide')); document.getElementById(id).classList.remove('hide') }
+    async function apiFetch(path, options={}){
+      const headers = options.headers||{}; if(token) headers['Authorization']=token; if(options.body && !headers['Content-Type']) headers['Content-Type']='application/json'; const r = await fetch(api+path,{...options, headers}); const j = await r.json(); if(j.error) throw new Error(j.error.message); return j.data }
+    window.addEventListener('hashchange', async ()=>{ const view = location.hash.replace('#','')||'home'; show(view); if(view==='board'){ await loadBoard() } if(view==='history'){ await loadHistory() } if(view==='token'){ await loadTokens() } if(view==='market'){ await loadMarket() } if(view==='ecosystem'){ await loadEco() } if(view==='settings'){ await loadMe() } if(view==='device'){ } });
+    async function login(){ const u=document.getElementById('loginUser').value; const p=document.getElementById('loginPass').value; const data=await apiFetch('/api/auth/login',{method:'POST',body:JSON.stringify({username:u,password:p})}); token=data.token; document.getElementById('authLink').textContent='Logout'; navigate('board') }
+    async function register(){ const u=document.getElementById('regUser').value; const p=document.getElementById('regPass').value; const p2=document.getElementById('regPass2').value; if(p!==p2){ alert('Password mismatch'); return } await apiFetch('/api/auth/register',{method:'POST',body:JSON.stringify({username:u,password:p})}); navigate('login') }
+    async function loadBoard(){ const eq=await apiFetch('/api/equipments'); const box=document.getElementById('equipList'); box.innerHTML=''; (eq||[]).forEach(x=>{ const d=document.createElement('div'); d.className='card'; d.innerHTML=`<b>${x.name}</b><div class='tag'>${x.status}</div><div>Health ${x.health}</div><button data-id='${x.id}'>View</button>`; d.querySelector('button').onclick=()=>openDevice(x.id); box.appendChild(d) }); const hs=await apiFetch('/api/health/summary'); document.getElementById('healthAvg').textContent='Average Health '+(hs.meta&&hs.meta.avg?hs.meta.avg.toFixed(1):''); const preds=await apiFetch('/api/health/predictions'); const pb=document.getElementById('predList'); pb.innerHTML=''; (preds||[]).forEach(x=>{ const d=document.createElement('div'); d.className='card'; d.textContent=`${x.id} next failure: ${x.nextPredictedFailure}`; pb.appendChild(d) }) }
+    async function openDevice(id){ const d=await apiFetch('/api/equipments/'+id); document.getElementById('deviceTitle').textContent=d.name; document.getElementById('deviceInfo').innerHTML=`Status ${d.status}<br>Health ${d.health}<br>Last Serviced ${d.lastServiced}<br>Next Predicted Failure ${d.nextPredictedFailure}`; show('device') }
+    async function executeTrade(type){ const amount = Number(document.getElementById(type==='BUY'?'buyAmount':'sellAmount').value||0); const price = Number(document.getElementById(type==='BUY'?'buyPrice':'sellPrice').value||0); const data=await apiFetch('/api/market/execute',{method:'POST',body:JSON.stringify({type, amount_kwh:amount, price_per_kwh:price})}); alert('Executed '+type+' '+data.amount_kwh+' kWh'); }
+    async function loadHistory(){ const list=await apiFetch('/api/transactions'); const box=document.getElementById('txList'); box.innerHTML=''; (list||[]).forEach(x=>{ const d=document.createElement('div'); d.className='card'; d.textContent=`${x.type} ${x.amount_kwh}kWh total ${x.total_price} at ${x.time}`; box.appendChild(d) }) }
+    async function calcToken(){ const energy=Number(document.getElementById('energyKwh').value||0); const baseline=Number(document.getElementById('baselineKg').value||0.7); const data=await apiFetch('/api/tokens/calculate',{method:'POST',body:JSON.stringify({energy_kwh:energy, baseline_kg_per_kwh:baseline})}); document.getElementById('tokenResult').textContent=`Minted ${data.tokens} tokens, ${data.tonnes.toFixed(2)} tonnes` }
+    async function loadTokens(){ document.getElementById('tokenResult').textContent='' }
+    async function loadMarket(){ const items=await apiFetch('/api/marketplace'); const box=document.getElementById('marketList'); box.innerHTML=''; (items||[]).forEach(x=>{ const d=document.createElement('div'); d.className='card'; d.innerHTML=`<b>${x.name}</b><div>Price ${x.price}</div><button>Buy now</button>`; box.appendChild(d) }) }
+    async function loadEco(){ const m=await apiFetch('/api/ecosystem/metrics'); document.getElementById('ecoMetrics').textContent=JSON.stringify(m); const obs=await apiFetch('/api/observations'); const box=document.getElementById('obsList'); box.innerHTML=''; (obs||[]).forEach(x=>{ const d=document.createElement('div'); d.className='card'; d.textContent=`${x.user}: ${x.description}`; box.appendChild(d) }) }
+    async function submitObs(){ const desc=document.getElementById('obsDesc').value; const photo=document.getElementById('obsPhoto').value; await apiFetch('/api/observations',{method:'POST',body:JSON.stringify({description:desc, photo})}); await loadEco() }
+    async function loadMe(){ try{ const me=await apiFetch('/api/me'); document.getElementById('meView').textContent=JSON.stringify(me); document.getElementById('meEmail').value=me.email||''; document.getElementById('meRole').value=me.role||'' }catch(e){ document.getElementById('meView').textContent='Please login' } }
+    async function saveMe(){ const email=document.getElementById('meEmail').value; const role=document.getElementById('meRole').value; const data=await apiFetch('/api/me',{method:'PUT',body:JSON.stringify({email, role})}); document.getElementById('meView').textContent=JSON.stringify(data) }
+    document.getElementById('btnLogin').onclick=login
+    document.getElementById('btnRegister').onclick=register
+    document.getElementById('btnBuy').onclick=()=>executeTrade('BUY')
+    document.getElementById('btnSell').onclick=()=>executeTrade('SELL')
+    document.getElementById('btnToken').onclick=calcToken
+    document.getElementById('btnObs').onclick=submitObs
+    document.getElementById('btnSaveMe').onclick=saveMe
+    document.getElementById('deviceBack').onclick=()=>navigate('home')
+    if(!location.hash) location.hash='#home'; window.dispatchEvent(new HashChangeEvent('hashchange'))
+  </script>
+</body>
+</html>
